@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Postprocessing, DebugCamera, BaseScene, Manager, IS_DEBUG, Sound} from "@/3d/sanwei";
+import { Post, DebugCamera, BaseScene, Manager, IS_DEBUG, Sound} from "@/3d/sanwei";
 
 import useStore, { ColorScheme } from "@/store";
 
@@ -33,13 +33,15 @@ export class MainScene extends BaseScene {
     this.camera.position.z = 100;
 
 
-    await Manager.initClass(Postprocessing, this.scene, this.camera); // TODO: allow multiple postprocessing classes
+    this.post = await Manager.initClass(Post); // TODO: allow multiple postprocessing classes
+   
+
     this.initLights();
     await this.initObjects();
 
     if (IS_DEBUG) {
-      this.debugCamera = await Manager.initClass(DebugCamera, this.scene);
-      this.initDebug();
+    
+      await this.initDebug();
     }
     // this.initEvents();
 
@@ -65,7 +67,10 @@ export class MainScene extends BaseScene {
     this.scene.add(mesh);
   };
 
-  initDebug = () => {
+  initDebug = async () => {
+
+    
+
     const folder = Manager.pane.addFolder({ title: SCENE_ID });
 
     folder.addBinding(MAIN_SCENE_UNIFORMS.uBackground, "value").on("change", (e) => {
@@ -75,13 +80,17 @@ export class MainScene extends BaseScene {
 
   };
 
+  // TODO: prerender?
+
   update = () => {
+    this.post.scene = this.scene;
+    this.post.camera = this.camera;
 
-    Postprocessing.radialBlurPass.uniforms.tBright =
-      Postprocessing.radialBlurPass.uniforms.tDiffuse;
+    this.post.radialBlurPass.uniforms.tBright =
+      this.post.radialBlurPass.uniforms.tDiffuse;
 
-    this.debugCamera?.update(); // TODO: refactor debug updates
+    
 
-    Postprocessing.update();
+    this.post.update();
   };
 }

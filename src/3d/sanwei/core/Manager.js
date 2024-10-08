@@ -100,7 +100,7 @@ class ManagerClass {
 
     if (IS_DEBUG) {
       if (ret.initDebug && this.pane) {
-        ret.initDebug(this.pane);
+        await ret.initDebug(this.pane);
       }
     }
 

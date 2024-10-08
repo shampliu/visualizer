@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Manager } from "./Manager";
-import { Postprocessing } from "./Postprocessing";
+import { Postprocessing } from "./Post";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 
 export const DEBUG_CAMERA_UNIFORMS = {
@@ -10,8 +10,9 @@ export const DEBUG_CAMERA_UNIFORMS = {
 };
 
 export class DebugCamera {
-  constructor(scene) {
-    this.scene = scene;
+
+  constructor() {
+
   }
   init = async () => {
     this.camera = new THREE.PerspectiveCamera(
@@ -28,14 +29,7 @@ export class DebugCamera {
     );
     this.orbitControls.enabled = DEBUG_CAMERA_UNIFORMS.enableOrbitControls;
 
-    const orbitControlsRenderPass = new RenderPass(this.scene, this.camera);
-    orbitControlsRenderPass.enabled = false;
-    Postprocessing.orbitControlsRenderPass = orbitControlsRenderPass;
-
-    Postprocessing.composer.insertPass(
-      Postprocessing.orbitControlsRenderPass,
-      1
-    );
+    
   };
 
   initDebug = async (pane) => {
@@ -113,14 +107,6 @@ export class DebugCamera {
   };
 
   update = () => {
-    if (DEBUG_CAMERA_UNIFORMS.enableOrbitControls) {
-      Postprocessing.renderPass.enabled = false;
-      Postprocessing.orbitControlsRenderPass.enabled = true;
-
-      this.orbitControls.update();
-    } else {
-      Postprocessing.renderPass.enabled = true;
-      Postprocessing.orbitControlsRenderPass.enabled = false;
-    }
+    this.orbitControls.enabled && this.orbitControls.update();
   };
 }

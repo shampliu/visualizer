@@ -1,5 +1,5 @@
 export { Manager, IS_DEBUG } from './core/Manager';
-export { Postprocessing } from './core/Postprocessing';
+export { Post } from './core/Post';
 export { DebugCamera } from './core/DebugCamera';
 export { Sound } from './core/Sound';
 export { RAF } from './core/RAF';

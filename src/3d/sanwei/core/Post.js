@@ -1,5 +1,10 @@
+// TODO: INSPO: https://github.com/plepers/nanogl-post/
+// https://github.com/makemepulse/2024-kaizen-public/tree/develop
+// https://github.com/Experience-Monks/webgl-react-boilerplate.git
+// https://github.com/Experience-Monks/nextjs-boilerplate/tree/main/src
+
 import * as THREE from "three";
-import { Manager } from "./Manager";
+import { IS_DEBUG, Manager } from "./Manager";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -12,6 +17,7 @@ import { RadialBlurShader } from "../shaders/postprocessing/radialBlurShader";
 import { RAF } from "./RAF";
 import { addUniforms } from "../util/tweakpane";
 import { GlobalUniforms } from "./GlobalUniforms";
+import { DEBUG_CAMERA_UNIFORMS, DebugCamera } from "./DebugCamera";
 
 export const POSTPROCESSING_UNIFORMS = {
   uRadialStrength: {
@@ -33,16 +39,17 @@ export const POSTPROCESSING_UNIFORMS = {
   },
 };
 
-class PostprocessingClass {
-  isSingleton = true;
+export class Post {
+  isSingleton = false;
+  scene;
+  camera;
 
-  init = async (scene, camera) => {
-    this.scene = scene;
-    this.camera = camera;
+
+  init = async () => {
 
     const composer = new EffectComposer(Manager.renderer);
 
-    const renderPass = new RenderPass(scene, camera);
+    const renderPass = new RenderPass();
     renderPass.enabled = true;
     this.renderPass = renderPass;
     composer.addPass(renderPass);
@@ -68,17 +75,31 @@ class PostprocessingClass {
       0.5,
       0.85
     );
-    bloomPass.threshold = POSTPROCESSING_UNIFORMS.bloom.threshold.value;
+    bloomPass.threshold = POSTPROCESSING_UNIFORMS.bloom.threshold.value; // TODO: localize uniforms
     bloomPass.strength = POSTPROCESSING_UNIFORMS.bloom.strength.value;
     bloomPass.radius = POSTPROCESSING_UNIFORMS.bloom.radius.value;
     this.bloomPass = bloomPass;
     // composer.addPass(bloomPass);
 
     this.composer = composer;
+
+
   };
 
-  initDebug = (pane) => {
+  initDebug = async (pane) => {
+    this.debugCamera = await Manager.initClass(DebugCamera, this);
+
+    const orbitControlsRenderPass = new RenderPass(this.scene, this.debugCamera.camera);
+    orbitControlsRenderPass.enabled = false;
+    this.orbitControlsRenderPass = orbitControlsRenderPass;
+
+    this.composer.insertPass(
+      this.orbitControlsRenderPass,
+      1
+    );
+    
     const folder = pane.addFolder({ title: "Postprocessing", expanded: false });
+    
     folder.addBinding(POSTPROCESSING_UNIFORMS.uRadialStrength, "value", {
       min: 0,
       max: 1,
@@ -114,6 +135,27 @@ class PostprocessingClass {
   };
 
   update = () => {
+    this.renderPass.scene = this.scene;
+    this.renderPass.camera = this.camera;
+
+    if (IS_DEBUG) {
+      this.orbitControlsRenderPass.scene = this.scene;
+
+
+      if (DEBUG_CAMERA_UNIFORMS.enableOrbitControls) {
+        this.renderPass.enabled = false;
+        this.orbitControlsRenderPass.enabled = true;
+
+        this.debugCamera?.update(); // TODO: refactor debug updates
+  
+      } else {
+        this.renderPass.enabled = true;
+        this.orbitControlsRenderPass.enabled = false;
+      }
+    }
+
+
+
     this.radialBlurPass.uniforms.uRadialStrength =
       POSTPROCESSING_UNIFORMS.uRadialStrength;
 
@@ -121,4 +163,4 @@ class PostprocessingClass {
   };
 }
 
-export const Postprocessing = new PostprocessingClass();
+
